@@ -1,0 +1,77 @@
+# =============================================================================
+# Render Blueprint - production deployment of the Spring Boot API on Aiven MySQL
+#
+# Usage: push this repository to GitHub/GitLab, then in Render choose
+#        "New +" > "Blueprint" and select the repository. Render reads this
+#        file, creates the web service and prompts for the values marked
+#        `sync: false` (Aiven connection details + the Netlify origin).
+#
+# Render cannot run Java on a native runtime, so the service is built from
+# backend/Dockerfile (see https://render.com/docs/language-support).
+# Docs: https://render.com/docs/blueprint-spec
+# =============================================================================
+services:
+  - type: web
+    # Must stay in sync with VITE_API_BASE_URL in netlify.toml: Render derives the
+    # service URL from the name (https://<name>.onrender.com).
+    name: phonebook-backend
+    runtime: docker
+    plan: free # upgrade to a paid plan to avoid cold starts
+    region: oregon # oregon | ohio | virginia | frankfurt | singapore
+    branch: main # change if your default branch is named differently
+    rootDir: backend # Render looks for ./Dockerfile here and uses it as the Docker build context
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit # redeploy automatically on every push
+    envVars:
+      # ---- Spring profile -------------------------------------------------
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+
+      # ---- Aiven for MySQL ------------------------------------------------
+      # `key` is the environment variable name the application reads (see
+      # application-prod.properties); `sync: false` tells Render to prompt for
+      # the secret VALUE during Blueprint creation and store it encrypted.
+      # Values come from Aiven Console > your MySQL service > Overview >
+      # "Connection information". Never put a value in this file.
+      - key: mysql-phonebook-01-imperialtslearn-1cbd.g.aivencloud.com
+        sync: false
+      - key: 11173
+        sync: false
+      - key: phonebook_db
+        sync: false
+      - key: avnadmin
+        sync: false
+      - key: AVNS_LVyRfkDtTYChsqi7wxB
+        sync: false
+
+      # TLS is mandatory on Aiven. REQUIRED encrypts the connection;
+      # use VERIFY_IDENTITY (+ DB_SSL_EXTRA) for full CA verification, see
+      # DEPLOYMENT.md > "Hardened TLS verification".
+      - key: DB_SSL_MODE
+        value: REQUIRED
+
+      # ---- JWT ------------------------------------------------------------
+      # Render generates a Base64, 256-bit secret on first deploy and keeps it
+      # stable across deploys. Rotating it invalidates all existing sessions.
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION_MS
+        value: "86400000"
+
+      # ---- CORS -----------------------------------------------------------
+      # Exact Netlify origin(s), comma separated, NO trailing slash, e.g.
+      #   https://contactnest.netlify.app,https://*.netlify.app
+      - key: https://phonebookapp01.netlify.app
+        sync: false
+
+      # ---- Schema management ---------------------------------------------
+      # "update" lets the first deploy create the tables in the empty Aiven
+      # database. Switch to "validate" once you applied db/schema.sql.
+      - key: JPA_DDL_AUTO
+        value: update
+
+      # ---- Misc -----------------------------------------------------------
+      - key: DB_POOL_MAX_SIZE
+        value: "5"
+      - key: LOG_LEVEL_APP
+        value: INFO

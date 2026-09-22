@@ -1,0 +1,37 @@
+# Backend (Maven) build output
+backend/target/
+
+# Frontend dependency installs and build output
+frontend/node_modules/
+frontend/dist/
+
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+.settings/
+.classpath
+.project
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# =============================================================================
+# Secrets - never commit real environment files
+# =============================================================================
+.env
+.env.local
+.env.*
+!.env.example
+
+# TLS material: private keys and generated truststores stay out of git. Public
+# CA certificates (e.g. backend/certs/aiven-ca.pem) MAY be committed - see
+# backend/certs/README.md.
+*.jks
+*.p12
+*.key
+service.cert

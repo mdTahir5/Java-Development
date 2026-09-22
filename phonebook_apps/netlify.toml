@@ -1,0 +1,50 @@
+# =============================================================================
+# Netlify configuration - production hosting for the React + Vite frontend
+# Docs: https://docs.netlify.com/build/configure-builds/file-based-configuration/
+# =============================================================================
+
+[build]
+  # Monorepo layout: the frontend lives in ./frontend. The build command runs
+  # inside the base directory and `publish` is resolved relative to it.
+  base = "frontend"
+  # `npm ci` installs the exact versions pinned in package-lock.json.
+  command = "npm ci && npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Vite 5 needs Node >= 18; pin the major version for reproducible builds.
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--no-audit --no-fund"
+
+  # Public origin of the deployed backend (Render web service). This value is
+  # NOT a secret - it is embedded in the browser bundle at build time.
+  # Update it if your Render URL differs, or set VITE_API_BASE_URL in the
+  # Netlify UI (Site configuration > Environment variables). NOTE: values
+  # defined here take precedence over the UI.
+  VITE_API_BASE_URL = "https://phonebook-backend.onrender.com"
+
+# ---------------------------------------------------------------------------
+# SPA fallback: any unknown path (deep link, refresh on /dashboard) is served
+# index.html so React can render the app.
+# ---------------------------------------------------------------------------
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# ---------------------------------------------------------------------------
+# Baseline security headers
+# ---------------------------------------------------------------------------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+
+# Vite fingerprints build assets, so they can be cached forever.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

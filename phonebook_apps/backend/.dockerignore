@@ -1,0 +1,13 @@
+# Keep the Docker build context small and free of secrets.
+target/
+.git/
+.gitignore
+.idea/
+.vscode/
+*.iml
+*.log
+.env
+.env.*
+!.env.example
+docker-compose*.yml
+README.md
